@@ -1,0 +1,5 @@
+pytz
+python-dateutil
+pycognito
+aiohttp
+influxdb-client
