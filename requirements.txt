@@ -3,3 +3,4 @@ python-dateutil
 pycognito
 aiohttp
 influxdb-client
+pytest-asyncio

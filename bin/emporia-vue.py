@@ -76,7 +76,7 @@ async def dump_cache(config):
         pickle.dump(config.cache_data, f)
 
 
-def load_cache(config):
+async def load_cache(config):
     now = datetime.datetime.now().replace(microsecond=0).astimezone(datetime.timezone.utc)
 
     config.cache_data = dict()
@@ -199,8 +199,8 @@ async def save_influx_data(config, datapoints):
 async def collect_last_saved(config, records):
     tasks = set()
 
-    for device_gid in get_devices(config):
-        for channel_num in get_channels(config, device_gid):
+    for device_gid in await get_devices(config):
+        for channel_num in await get_channels(config, device_gid):
             task = asyncio.create_task(
                 load_influx_data(config, device_gid, channel_num)
                 )
@@ -257,7 +257,7 @@ async def load_influx_data(config, device_gid, channel_num):
         return SimpleNamespace(**value)
 
 
-def get_devices(config):
+async def get_devices(config):
     return {
         device['deviceGid']: SimpleNamespace(**{
             'parentDeviceGid': device['parentDeviceGid'],
@@ -268,7 +268,7 @@ def get_devices(config):
     }
 
 
-def get_channels(config, device_gid):
+async def get_channels(config, device_gid):
     device = next(device
                   for device in config.cache_data['devices']['devices']
                   if device['deviceGid'] == device_gid)
@@ -283,11 +283,11 @@ def get_channels(config, device_gid):
     }
 
 
-def get_planned_work(config, records):
+async def get_planned_work(config, records):
     value = list()
 
-    for device_gid in get_devices(config):
-        for channel_num in get_channels(config, device_gid):
+    for device_gid in await get_devices(config):
+        for channel_num in await get_channels(config, device_gid):
             for _ in range(config.load_factor):
                 if not records[device_gid][channel_num].planned:
                     continue
@@ -387,7 +387,7 @@ async def main(args):
 
     with open(args.config) as f:
         config = SimpleNamespace(**json.load(f))
-    config.now = load_cache(config)
+    config.now = await load_cache(config)
 
     config.window = datetime.timedelta(seconds=args.window)
     config.backlog = args.backlog
@@ -405,10 +405,14 @@ async def main(args):
         records = {
             device: {
                 channel_num: channel_data
-                for channel_num, channel_data in get_channels(config, device).items()
+                for channel_num, channel_data in (await get_channels(config, device)).items()
             }
-            for device in get_devices(config).keys()
+            for device in await get_devices(config)
         }
+
+        print(records)
+
+        raise RuntimeError('ok')
 
         for record in await collect_last_saved(config, records):
             records[record.device_gid][record.channel_num].reading = record.reading
@@ -417,7 +421,7 @@ async def main(args):
         while True:
             logging.info(f'Running batch of {config.load_factor} frames')
 
-            work = get_planned_work(config, records)
+            work = await get_planned_work(config, records)
             if not work:
                 break
 
