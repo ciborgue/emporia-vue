@@ -383,6 +383,8 @@ async def load_online_data(config, session, frame):
 
 
 async def main(args):
+    await asyncio.sleep(random.uniform(20.0, 40.0))
+
     with open(args.config) as f:
         config = SimpleNamespace(**json.load(f))
     config.now = load_cache(config)
