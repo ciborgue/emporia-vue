@@ -6,5 +6,6 @@
     "measurment": "Emporia",
     "login": "*****gue@gmail.com",
     "password": "************",
-    "cache": "/var/tmp/emporia-vue.pickle"
+    "cache": "/var/tmp/emporia-vue.pickle",
+    "pid": "/tmp/emporia.pid"
 }

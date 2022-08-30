@@ -4,3 +4,4 @@ pycognito
 aiohttp
 influxdb-client
 pytest-asyncio
+recursive_diff
